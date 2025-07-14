@@ -24,12 +24,43 @@ def get_engine():
     global engine
     if engine is None and settings.DATABASE_URL:
         try:
-            # Convert PostgreSQL URL to asyncpg format if needed
+            from urllib.parse import urlparse, parse_qs, urlunparse
+            
+            # Parse and convert PostgreSQL URL to asyncpg format
             database_url = settings.DATABASE_URL
             if database_url.startswith("postgresql://"):
                 database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
             elif database_url.startswith("postgres://"):
                 database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+            
+            # Parse URL to extract SSL parameters for asyncpg
+            parsed = urlparse(database_url)
+            query_params = parse_qs(parsed.query)
+            
+            # Extract SSL mode and remove from URL if present
+            ssl_mode = None
+            if 'sslmode' in query_params:
+                ssl_mode = query_params['sslmode'][0]
+                # Remove sslmode from query params
+                del query_params['sslmode']
+                
+                # Rebuild URL without sslmode
+                new_query = '&'.join([f"{k}={v[0]}" for k, v in query_params.items()])
+                database_url = urlunparse((
+                    parsed.scheme, parsed.netloc, parsed.path,
+                    parsed.params, new_query, parsed.fragment
+                ))
+            
+            # Configure connect_args for asyncpg
+            connect_args = {"server_settings": {"jit": "off"}}
+            
+            # Add SSL configuration if needed
+            if ssl_mode == 'require':
+                connect_args['ssl'] = 'require'
+            elif ssl_mode == 'prefer':
+                connect_args['ssl'] = 'prefer'
+            elif ssl_mode == 'disable':
+                connect_args['ssl'] = 'disable'
             
             engine = create_async_engine(
                 database_url,
@@ -37,7 +68,7 @@ def get_engine():
                 future=True,
                 pool_pre_ping=True,
                 pool_recycle=300,
-                connect_args={"server_settings": {"jit": "off"}}
+                connect_args=connect_args
             )
         except Exception as e:
             logger.error("Failed to create database engine", error=str(e))
