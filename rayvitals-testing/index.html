@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RavVitals API Testing Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            background: #f9fafb;
+        }
+
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #gray;
+        }
+
+        .status-indicator.healthy { background: #48bb78; }
+        .status-indicator.unhealthy { background: #f56565; }
+        .status-indicator.pending { background: #ed8936; }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+        }
+
+        .results {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .results pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-radius: 50%;
+            border-top: 3px solid #667eea;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .score-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+
+        .score-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .score-label {
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .score-good { color: #10b981; }
+        .score-warning { color: #f59e0b; }
+        .score-danger { color: #ef4444; }
+
+        .health-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .config-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .test-item {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-item:last-child {
+            border-bottom: none;
+        }
+
+        .timestamp {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 RavVitals Testing Dashboard</h1>
+            <p>Comprehensive API Testing, Database Verification & AI Integration</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Configuration Panel -->
+            <div class="section">
+                <h2>⚙️ Configuration</h2>
+                <div class="config-panel">
+                    <div class="form-group">
+                        <label for="apiUrl">API Base URL:</label>
+                        <input type="url" id="apiUrl" value="https://rayvitals-backend-xwq86.ondigitalocean.app" placeholder="https://your-api.com">
+                    </div>
+                    <button class="btn" onclick="updateConfig()">Update Configuration</button>
+                    <button class="btn btn-secondary" onclick="testConnectivity()">Test Connectivity</button>
+                </div>
+            </div>
+
+            <!-- Health Status Section -->
+            <div class="section">
+                <h2><span class="status-indicator" id="overallStatus"></span> System Health Status</h2>
+                <button class="btn" onclick="checkSystemHealth()">Check System Health</button>
+                <button class="btn btn-secondary" onclick="checkDetailedHealth()">Detailed Health Check</button>
+                
+                <div id="healthResults" class="results" style="display: none;">
+                    <h3>Health Check Results:</h3>
+                    <div id="healthData"></div>
+                </div>
+            </div>
+
+            <!-- Database Testing Section -->
+            <div class="section">
+                <h2><span class="status-indicator" id="dbStatus"></span> Database Storage Testing</h2>
+                <p>Test database connectivity, storage, and retrieval operations.</p>
+                
+                <div class="grid">
+                    <div>
+                        <button class="btn" onclick="testDatabaseConnection()">Test DB Connection</button>
+                        <button class="btn btn-secondary" onclick="viewStoredAudits()">View Stored Audits</button>
+                        <button class="btn btn-danger" onclick="clearTestData()">Clear Test Data</button>
+                    </div>
+                </div>
+
+                <div id="dbResults" class="results" style="display: none;">
+                    <h3>Database Test Results:</h3>
+                    <div id="dbData"></div>
+                </div>
+            </div>
+
+            <!-- Audit Testing Section -->
+            <div class="section">
+                <h2><span class="status-indicator" id="auditStatus"></span> Audit Engine Testing</h2>
+                
+                <div class="form-group">
+                    <label for="testUrl">Website URL to Audit:</label>
+                    <input type="url" id="testUrl" value="https://example.com" placeholder="https://website-to-test.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="auditType">Audit Type:</label>
+                    <select id="auditType">
+                        <option value="demo">Demo (No Database)</option>
+                        <option value="full">Full Audit (With Database)</option>
+                        <option value="async">Async Audit (Celery)</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="startAudit()">Start Audit</button>
+                <button class="btn btn-secondary" onclick="getLastAuditStatus()">Check Last Audit</button>
+
+                <div class="loading" id="auditLoading">
+                    <div class="spinner"></div>
+                    <p>Running audit... This may take a moment.</p>
+                </div>
+
+                <div id="auditResults" class="results" style="display: none;">
+                    <h3>Audit Results:</h3>
+                    <div id="auditData"></div>
+                </div>
+
+                <div id="auditScores" class="grid" style="display: none; margin-top: 20px;">
+                    <!-- Score cards will be populated here -->
+                </div>
+            </div>
+
+            <!-- AI Integration Testing -->
+            <div class="section">
+                <h2><span class="status-indicator" id="aiStatus"></span> AI Integration (Gemini) Testing</h2>
+                
+                <div class="form-group">
+                    <label for="aiTestUrl">URL for AI Analysis:</label>
+                    <input type="url" id="aiTestUrl" value="https://google.com" placeholder="https://website-for-ai-analysis.com">
+                </div>
+
+                <button class="btn" onclick="testAIAnalysis()">Test AI Analysis</button>
+                <button class="btn btn-secondary" onclick="testGeminiDirectly()">Test Gemini API Directly</button>
+
+                <div class="loading" id="aiLoading">
+                    <div class="spinner"></div>
+                    <p>AI is analyzing the website... This may take 30-60 seconds.</p>
+                </div>
+
+                <div id="aiResults" class="results" style="display: none;">
+                    <h3>AI Analysis Results:</h3>
+                    <div id="aiData"></div>
+                </div>
+            </div>
+
+            <!-- Test History -->
+            <div class="section">
+                <h2>📊 Test History</h2>
+                <button class="btn btn-secondary" onclick="clearTestHistory()">Clear History</button>
+                
+                <div id="testHistory" class="test-history">
+                    <div class="test-item">
+                        <span>No tests run yet</span>
+                        <span class="timestamp">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Raw API Testing -->
+            <div class="section">
+                <h2>🛠️ Raw API Testing</h2>
+                
+                <div class="form-group">
+                    <label for="apiEndpoint">Endpoint:</label>
+                    <select id="apiEndpoint">
+                        <option value="/health">GET /health</option>
+                        <option value="/api/v1/health">GET /api/v1/health</option>
+                        <option value="/api/v1/health/detailed">GET /api/v1/health/detailed</option>
+                        <option value="/api/v1/audit/demo">POST /api/v1/audit/demo</option>
+                        <option value="/api/v1/audit/start">POST /api/v1/audit/start</option>
+                        <option value="/openapi.json">GET /openapi.json</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="requestBody">Request Body (JSON):</label>
+                    <textarea id="requestBody" rows="4" style="width: 100%; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px;" placeholder='{"url": "https://example.com"}'></textarea>
+                </div>
+
+                <button class="btn" onclick="makeRawAPICall()">Make API Call</button>
+
+                <div id="rawResults" class="results" style="display: none;">
+                    <h3>Raw API Response:</h3>
+                    <div id="rawData"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
