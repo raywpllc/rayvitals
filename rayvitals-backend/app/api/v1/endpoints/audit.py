@@ -343,14 +343,16 @@ async def process_audit_background(audit_id: str, url: str):
         logger.error("Audit processing failed", error=str(e), audit_id=audit_id)
         
         # Update audit status to failed
-        from app.core.database import async_session_factory
-        async with async_session_factory() as db:
-            stmt = select(AuditRequest).where(AuditRequest.id == uuid.UUID(audit_id))
-            result = await db.execute(stmt)
-            audit_request = result.scalar_one_or_none()
-            
-            if audit_request:
-                audit_request.status = "failed"
-                audit_request.error_message = str(e)
-                audit_request.updated_at = datetime.utcnow()
-                await db.commit()
+        from app.core.database import get_session_factory
+        session_factory = get_session_factory()
+        if session_factory:
+            async with session_factory() as db:
+                stmt = select(AuditRequest).where(AuditRequest.id == uuid.UUID(audit_id))
+                result = await db.execute(stmt)
+                audit_request = result.scalar_one_or_none()
+                
+                if audit_request:
+                    audit_request.status = "failed"
+                    audit_request.error_message = str(e)
+                    audit_request.updated_at = datetime.utcnow()
+                    await db.commit()

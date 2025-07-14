@@ -14,7 +14,7 @@ import httpx
 import uuid
 from sqlalchemy import select
 
-from app.core.database import async_session_factory
+from app.core.database import get_session_factory
 from app.models.audit import AuditRequest, AuditResult, AuditMetrics
 from app.services.security_scanner import SecurityScanner
 from app.services.performance_scanner import PerformanceScanner
@@ -36,7 +36,11 @@ class AuditService:
         start_time = time.time()
         
         try:
-            async with async_session_factory() as db:
+            session_factory = get_session_factory()
+            if not session_factory:
+                raise RuntimeError("Database not configured - cannot process audit")
+                
+            async with session_factory() as db:
                 # Update status to processing
                 stmt = select(AuditRequest).where(AuditRequest.id == uuid.UUID(audit_id))
                 result = await db.execute(stmt)
@@ -110,17 +114,19 @@ class AuditService:
             logger.error("Audit processing failed", error=str(e), audit_id=audit_id)
             
             # Update audit status to failed
-            async with async_session_factory() as db:
-                stmt = select(AuditRequest).where(AuditRequest.id == uuid.UUID(audit_id))
-                result = await db.execute(stmt)
-                audit_request = result.scalar_one_or_none()
-                
-                if audit_request:
-                    audit_request.status = "failed"
-                    audit_request.error_message = str(e)
-                    audit_request.updated_at = datetime.utcnow()
-                    audit_request.processing_time = time.time() - start_time
-                    await db.commit()
+            session_factory = get_session_factory()
+            if session_factory:
+                async with session_factory() as db:
+                    stmt = select(AuditRequest).where(AuditRequest.id == uuid.UUID(audit_id))
+                    result = await db.execute(stmt)
+                    audit_request = result.scalar_one_or_none()
+                    
+                    if audit_request:
+                        audit_request.status = "failed"
+                        audit_request.error_message = str(e)
+                        audit_request.updated_at = datetime.utcnow()
+                        audit_request.processing_time = time.time() - start_time
+                        await db.commit()
             
             raise
     
