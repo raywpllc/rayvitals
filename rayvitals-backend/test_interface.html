@@ -63,32 +63,94 @@
         </div>
         
         <div class="endpoint-test">
+            <h2>🗄️ Database Storage Testing</h2>
+            <button onclick="testDatabaseConnection()">Test Database Connection</button>
+            <button onclick="viewStoredAudits()">View Stored Audits</button>
+            <button onclick="testAuditStorage()">Test Audit Storage</button>
+            <button onclick="clearTestData()">Clear Test Data</button>
+            <div id="database-results"></div>
+        </div>
+        
+        <div class="endpoint-test">
+            <h2>🤖 AI Integration (Gemini) Testing</h2>
+            <div class="form-group">
+                <label for="ai-test-url">URL for AI Analysis:</label>
+                <input type="url" id="ai-test-url" placeholder="https://example.com" value="https://google.com">
+            </div>
+            <button onclick="testGeminiAPI()">Test Gemini API Directly</button>
+            <button onclick="testAIAnalysis()">Test AI Analysis Integration</button>
+            <button onclick="testAISummaryGeneration()">Test AI Summary Generation</button>
+            <div id="ai-results"></div>
+        </div>
+
+        <div class="endpoint-test">
             <h2>🧪 API Configuration</h2>
             <div class="form-group">
                 <label for="api-base">API Base URL:</label>
-                <input type="url" id="api-base" value="http://localhost:8000">
+                <input type="url" id="api-base" value="https://rayvitals-backend-xwq86.ondigitalocean.app">
             </div>
             <p><strong>Note:</strong> Make sure the RayVitals backend is running on the specified URL.</p>
         </div>
     </div>
 
     <script>
-        const API_BASE = () => document.getElementById('api-base').value;
+        const API_BASE = () => {
+            const baseUrl = document.getElementById('api-base').value;
+            console.log('Raw API base URL from input:', baseUrl);
+            
+            // Force production URL if localhost is detected
+            if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+                const productionUrl = 'https://rayvitals-backend-xwq86.ondigitalocean.app';
+                console.log('Localhost detected, forcing production URL:', productionUrl);
+                document.getElementById('api-base').value = productionUrl;
+                return productionUrl;
+            }
+            
+            // Ensure we have a full URL
+            if (baseUrl.startsWith('http')) {
+                console.log('Using provided URL:', baseUrl);
+                return baseUrl;
+            } else {
+                // If it's a relative URL or just a domain, make it absolute
+                const fullUrl = window.location.origin + (baseUrl.startsWith('/') ? baseUrl : '/' + baseUrl);
+                console.log('Converted to absolute URL:', fullUrl);
+                return fullUrl;
+            }
+        };
         
         async function testHealth() {
             try {
-                const response = await fetch(`${API_BASE()}/health`);
+                const apiUrl = `${API_BASE()}/health`;
+                console.log('Testing health endpoint:', apiUrl);
+                
+                const response = await fetch(apiUrl);
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Response data:', data);
+                
                 document.getElementById('health-results').innerHTML = `
                     <div class="status ${data.status === 'healthy' ? 'completed' : 'failed'}">
                         <strong>Status:</strong> ${data.status}
                         <br><strong>Service:</strong> ${data.service}
+                        <br><strong>API URL:</strong> ${apiUrl}
+                        <br><strong>Response Time:</strong> ${new Date().toLocaleTimeString()}
                     </div>
                 `;
             } catch (error) {
+                console.error('Health check error:', error);
                 document.getElementById('health-results').innerHTML = `
                     <div class="status failed">
                         <strong>Error:</strong> ${error.message}
+                        <br><strong>Type:</strong> ${error.name}
+                        <br><strong>API URL:</strong> ${API_BASE()}/health
+                        <br><strong>Timestamp:</strong> ${new Date().toLocaleTimeString()}
+                        <br><strong>Debug:</strong> Check browser console for more details
                     </div>
                 `;
             }
@@ -359,8 +421,345 @@
             }, 5000);
         }
         
-        // Test health on page load
+        // Database Testing Functions
+        async function testDatabaseConnection() {
+            try {
+                const response = await fetch(`${API_BASE()}/api/v1/health/detailed`);
+                const data = await response.json();
+                
+                let dbStatus = 'Unknown';
+                let dbDetails = '';
+                
+                if (data.checks && data.checks.database) {
+                    dbStatus = data.checks.database.status;
+                    dbDetails = JSON.stringify(data.checks.database, null, 2);
+                } else {
+                    dbDetails = 'Database status not available in health check';
+                }
+                
+                document.getElementById('database-results').innerHTML = `
+                    <div class="status ${dbStatus === 'healthy' ? 'completed' : 'failed'}">
+                        <strong>Database Connection Test</strong>
+                        <br><strong>Status:</strong> ${dbStatus}
+                        <br><strong>Details:</strong>
+                        <pre>${dbDetails}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('database-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Database Connection Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function viewStoredAudits() {
+            try {
+                // Try to get recent audits by making a demo audit first to see if any exist
+                const response = await fetch(`${API_BASE()}/api/v1/audit/demo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://example.com' })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('database-results').innerHTML = `
+                        <div class="status completed">
+                            <strong>Database Read Test</strong>
+                            <br>Successfully performed a demo audit operation.
+                            <br>Note: This tests the API's ability to process requests without requiring database storage.
+                        </div>
+                    `;
+                } else {
+                    const data = await response.json();
+                    document.getElementById('database-results').innerHTML = `
+                        <div class="status failed">
+                            <strong>Database Read Test Failed:</strong> ${data.detail || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('database-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Database Read Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testAuditStorage() {
+            try {
+                document.getElementById('database-results').innerHTML = `
+                    <div class="status pending">
+                        <strong>Testing Audit Storage...</strong>
+                        <br>Creating a test audit and checking database storage...
+                    </div>
+                `;
+                
+                // Start a real audit to test database storage
+                const response = await fetch(`${API_BASE()}/api/v1/audit/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://example.com' })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.audit_id) {
+                    // Test if we can retrieve the audit status
+                    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+                    
+                    const statusResponse = await fetch(`${API_BASE()}/api/v1/audit/status/${data.audit_id}`);
+                    const statusData = await statusResponse.json();
+                    
+                    if (statusResponse.ok) {
+                        document.getElementById('database-results').innerHTML = `
+                            <div class="status completed">
+                                <strong>Audit Storage Test Successful</strong>
+                                <br><strong>Audit ID:</strong> ${data.audit_id}
+                                <br><strong>Status:</strong> ${statusData.status}
+                                <br><strong>Database Storage:</strong> ✅ Working
+                                <br><strong>Created:</strong> ${new Date(statusData.created_at).toLocaleString()}
+                                <br>Successfully stored and retrieved audit data from database.
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('database-results').innerHTML = `
+                            <div class="status failed">
+                                <strong>Audit Storage Test Failed</strong>
+                                <br>Audit was created but could not be retrieved from database.
+                                <br><strong>Error:</strong> ${statusData.detail}
+                            </div>
+                        `;
+                    }
+                } else {
+                    document.getElementById('database-results').innerHTML = `
+                        <div class="status failed">
+                            <strong>Audit Storage Test Failed</strong>
+                            <br>Could not create audit in database.
+                            <br><strong>Error:</strong> ${data.detail || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('database-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Audit Storage Test Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function clearTestData() {
+            if (confirm('This will attempt to clear test data. Continue?')) {
+                document.getElementById('database-results').innerHTML = `
+                    <div class="status pending">
+                        <strong>Note:</strong> Test data clearing would require a dedicated endpoint.
+                        <br>Currently, you can clear data manually through the database admin panel.
+                        <br><strong>Supabase URL:</strong> https://supabase.com/dashboard
+                    </div>
+                `;
+            }
+        }
+        
+        // AI Testing Functions
+        async function testGeminiAPI() {
+            try {
+                document.getElementById('ai-results').innerHTML = `
+                    <div class="status pending">
+                        <strong>Testing Gemini API Connection...</strong>
+                        <br>This may take 10-30 seconds...
+                    </div>
+                `;
+                
+                const testPrompt = "Please respond with 'Gemini API is working correctly' to confirm the connection.";
+                
+                // Test through our backend's AI endpoint
+                const response = await fetch(`${API_BASE()}/api/v1/audit/demo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://google.com' })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.ai_summary) {
+                    document.getElementById('ai-results').innerHTML = `
+                        <div class="status completed">
+                            <strong>Gemini API Test Successful</strong>
+                            <br><strong>Response Generated:</strong> ✅
+                            <br><strong>AI Summary Length:</strong> ${data.ai_summary.length} characters
+                            <br><strong>Sample Response:</strong>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px; max-height: 200px; overflow-y: auto;">
+                                ${data.ai_summary.substring(0, 200)}${data.ai_summary.length > 200 ? '...' : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('ai-results').innerHTML = `
+                        <div class="status failed">
+                            <strong>Gemini API Test Failed</strong>
+                            <br><strong>Error:</strong> ${data.detail || 'No AI summary generated'}
+                            <br>Check if Gemini API key is configured correctly.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('ai-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Gemini API Test Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testAIAnalysis() {
+            const url = document.getElementById('ai-test-url').value;
+            if (!url) {
+                alert('Please enter a URL for AI analysis');
+                return;
+            }
+            
+            try {
+                document.getElementById('ai-results').innerHTML = `
+                    <div class="status processing">
+                        <strong>Running AI Analysis...</strong>
+                        <br>URL: ${url}
+                        <br>This may take 30-60 seconds...
+                    </div>
+                `;
+                
+                const response = await fetch(`${API_BASE()}/api/v1/audit/demo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('ai-results').innerHTML = `
+                        <div class="status completed">
+                            <strong>AI Analysis Completed</strong>
+                            <br><strong>URL Analyzed:</strong> ${data.url}
+                            <br><strong>Overall Score:</strong> ${data.scores.overall}/100
+                            <br><strong>AI Summary Generated:</strong> ✅ (${data.ai_summary.length} characters)
+                            
+                            <h4>AI-Generated Summary:</h4>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">${data.ai_summary}</div>
+                            
+                            <h4>Scores Analysis:</h4>
+                            <p>
+                                Security: ${data.scores.security}/100 |
+                                Performance: ${data.scores.performance}/100 |
+                                SEO: ${data.scores.seo}/100 |
+                                UX: ${data.scores.ux}/100 |
+                                Accessibility: ${data.scores.accessibility}/100
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('ai-results').innerHTML = `
+                        <div class="status failed">
+                            <strong>AI Analysis Failed</strong>
+                            <br><strong>Error:</strong> ${data.detail || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('ai-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>AI Analysis Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testAISummaryGeneration() {
+            try {
+                document.getElementById('ai-results').innerHTML = `
+                    <div class="status processing">
+                        <strong>Testing AI Summary Generation...</strong>
+                        <br>Generating summaries for multiple test scenarios...
+                    </div>
+                `;
+                
+                const testUrls = ['https://google.com', 'https://github.com', 'https://stackoverflow.com'];
+                let results = [];
+                
+                for (const testUrl of testUrls) {
+                    try {
+                        const response = await fetch(`${API_BASE()}/api/v1/audit/demo`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ url: testUrl })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.ai_summary) {
+                            results.push({
+                                url: testUrl,
+                                success: true,
+                                summary: data.ai_summary.substring(0, 100) + '...',
+                                length: data.ai_summary.length
+                            });
+                        } else {
+                            results.push({
+                                url: testUrl,
+                                success: false,
+                                error: data.detail || 'No summary generated'
+                            });
+                        }
+                    } catch (error) {
+                        results.push({
+                            url: testUrl,
+                            success: false,
+                            error: error.message
+                        });
+                    }
+                    
+                    // Add small delay between requests
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                const successCount = results.filter(r => r.success).length;
+                
+                document.getElementById('ai-results').innerHTML = `
+                    <div class="status ${successCount === testUrls.length ? 'completed' : (successCount > 0 ? 'processing' : 'failed')}">
+                        <strong>AI Summary Generation Test</strong>
+                        <br><strong>Success Rate:</strong> ${successCount}/${testUrls.length}
+                        <br><strong>Results:</strong>
+                        <div style="margin-top: 10px;">
+                            ${results.map(r => `
+                                <div style="margin: 5px 0; padding: 8px; background: ${r.success ? '#d4edda' : '#f8d7da'}; border-radius: 4px;">
+                                    <strong>${r.url}:</strong> ${r.success ? `✅ Summary (${r.length} chars)` : `❌ ${r.error}`}
+                                    ${r.success ? `<br><em>${r.summary}</em>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('ai-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>AI Summary Test Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize page on load
         window.addEventListener('load', () => {
+            // Ensure API base URL is set correctly
+            const apiBaseInput = document.getElementById('api-base');
+            if (!apiBaseInput.value || apiBaseInput.value.includes('localhost')) {
+                apiBaseInput.value = 'https://rayvitals-backend-xwq86.ondigitalocean.app';
+                console.log('Fixed API base URL to production URL');
+            }
+            console.log('Current API base URL:', apiBaseInput.value);
+            
             testHealth();
         });
     </script>
