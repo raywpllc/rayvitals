@@ -54,13 +54,20 @@ def get_engine():
             # Configure connect_args for asyncpg
             connect_args = {"server_settings": {"jit": "off"}}
             
-            # Add SSL configuration if needed
+            # Add SSL configuration if needed - asyncpg uses different SSL parameter format
             if ssl_mode == 'require':
-                connect_args['ssl'] = 'require'
+                import ssl
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                connect_args['ssl'] = ssl_context
             elif ssl_mode == 'prefer':
-                connect_args['ssl'] = 'prefer'
-            elif ssl_mode == 'disable':
-                connect_args['ssl'] = 'disable'
+                import ssl
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                connect_args['ssl'] = ssl_context
+            # For 'disable', don't add SSL to connect_args
             
             engine = create_async_engine(
                 database_url,
