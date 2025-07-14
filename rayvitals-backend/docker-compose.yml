@@ -1,0 +1,56 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - rayvitals-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - rayvitals-net
+
+  # Celery worker
+  celery-worker:
+    build: .
+    env_file:
+      - .env
+    environment:
+      - DEBUG=True
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: celery -A app.core.celery worker --loglevel=info
+    networks:
+      - rayvitals-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+networks:
+  rayvitals-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RayVitals Backend API Test Interface</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="url"] { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .results { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .status.pending { background-color: #fff3cd; border: 1px solid #ffeaa7; }
+        .status.processing { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .status.completed { background-color: #d1ecf1; border: 1px solid #bee5eb; }
+        .status.failed { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .score { font-size: 24px; font-weight: bold; margin: 10px 0; }
+        .score.excellent { color: #28a745; }
+        .score.good { color: #17a2b8; }
+        .score.fair { color: #ffc107; }
+        .score.poor { color: #dc3545; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .endpoint-test { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 4px; }
+        .health-check { color: #28a745; }
+        .health-check.unhealthy { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RayVitals Backend API Test Interface</h1>
+        
+        <div class="endpoint-test">
+            <h2>🔍 Health Check</h2>
+            <button onclick="testHealth()">Test Health Endpoint</button>
+            <button onclick="testDetailedHealth()">Test Detailed Health</button>
+            <div id="health-results"></div>
+        </div>
+        
+        <div class="endpoint-test">
+            <h2>🚀 Website Audit</h2>
+            <div class="form-group">
+                <label for="audit-url">Website URL:</label>
+                <input type="url" id="audit-url" placeholder="https://example.com" value="https://example.com">
+            </div>
+            <button onclick="startAudit()">Start Audit (Requires Database)</button>
+            <button onclick="startDemoAudit()">Demo Audit (No Database Required)</button>
+            <div id="audit-results"></div>
+        </div>
+        
+        <div class="endpoint-test">
+            <h2>📊 Check Audit Status</h2>
+            <div class="form-group">
+                <label for="audit-id">Audit ID:</label>
+                <input type="text" id="audit-id" placeholder="Enter audit ID from previous step">
+            </div>
+            <button onclick="checkStatus()">Check Status</button>
+            <button onclick="getResults()">Get Results</button>
+            <div id="status-results"></div>
+        </div>
+        
+        <div class="endpoint-test">
+            <h2>🧪 API Configuration</h2>
+            <div class="form-group">
+                <label for="api-base">API Base URL:</label>
+                <input type="url" id="api-base" value="http://localhost:8000">
+            </div>
+            <p><strong>Note:</strong> Make sure the RayVitals backend is running on the specified URL.</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = () => document.getElementById('api-base').value;
+        
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE()}/health`);
+                const data = await response.json();
+                document.getElementById('health-results').innerHTML = `
+                    <div class="status ${data.status === 'healthy' ? 'completed' : 'failed'}">
+                        <strong>Status:</strong> ${data.status}
+                        <br><strong>Service:</strong> ${data.service}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('health-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testDetailedHealth() {
+            try {
+                const response = await fetch(`${API_BASE()}/api/v1/health/detailed`);
+                const data = await response.json();
+                document.getElementById('health-results').innerHTML = `
+                    <div class="status ${data.status === 'healthy' ? 'completed' : 'failed'}">
+                        <strong>Overall Status:</strong> ${data.status}
+                        <br><strong>Service:</strong> ${data.service}
+                        <br><strong>Version:</strong> ${data.version}
+                    </div>
+                    <h4>Component Status:</h4>
+                    <pre>${JSON.stringify(data.checks, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('health-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function startAudit() {
+            const url = document.getElementById('audit-url').value;
+            if (!url) {
+                alert('Please enter a website URL');
+                return;
+            }
+            
+            try {
+                console.log('Starting audit for:', url);
+                const response = await fetch(`${API_BASE()}/api/v1/audit/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (response.ok) {
+                    document.getElementById('audit-id').value = data.audit_id;
+                    document.getElementById('audit-results').innerHTML = `
+                        <div class="status pending">
+                            <strong>Audit Started!</strong>
+                            <br><strong>Audit ID:</strong> ${data.audit_id}
+                            <br><strong>Status:</strong> ${data.status}
+                            <br><strong>Message:</strong> ${data.message}
+                        </div>
+                        <p>Use the audit ID above to check status and get results.</p>
+                    `;
+                } else {
+                    document.getElementById('audit-results').innerHTML = `
+                        <div class="status failed">
+                            <strong>Error:</strong> ${data.detail || 'Unknown error'}
+                            <br><strong>Status Code:</strong> ${response.status}
+                            <br><strong>Response:</strong> <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('audit-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Error:</strong> ${error.message}
+                        <br><strong>Type:</strong> ${error.name}
+                        <br><strong>Stack:</strong> <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        async function checkStatus() {
+            const auditId = document.getElementById('audit-id').value;
+            if (!auditId) {
+                alert('Please enter an audit ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE()}/api/v1/audit/status/${auditId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const getScoreClass = (score) => {
+                        if (score >= 80) return 'excellent';
+                        if (score >= 60) return 'good';
+                        if (score >= 40) return 'fair';
+                        return 'poor';
+                    };
+                    
+                    document.getElementById('status-results').innerHTML = `
+                        <div class="status ${data.status}">
+                            <strong>Status:</strong> ${data.status}
+                            <br><strong>URL:</strong> ${data.url}
+                            <br><strong>Created:</strong> ${new Date(data.created_at).toLocaleString()}
+                            <br><strong>Updated:</strong> ${new Date(data.updated_at).toLocaleString()}
+                            ${data.processing_time ? `<br><strong>Processing Time:</strong> ${data.processing_time}s` : ''}
+                            ${data.error_message ? `<br><strong>Error:</strong> ${data.error_message}` : ''}
+                        </div>
+                        ${data.overall_score ? `
+                            <div class="score ${getScoreClass(data.overall_score)}">
+                                Overall Score: ${data.overall_score}/100
+                            </div>
+                            <p>
+                                Security: ${data.security_score || 'N/A'}/100 |
+                                Performance: ${data.performance_score || 'N/A'}/100 |
+                                SEO: ${data.seo_score || 'N/A'}/100
+                            </p>
+                        ` : ''}
+                    `;
+                } else {
+                    document.getElementById('status-results').innerHTML = `
+                        <div class="status failed">
+                            <strong>Error:</strong> ${data.detail || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('status-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function getResults() {
+            const auditId = document.getElementById('audit-id').value;
+            if (!auditId) {
+                alert('Please enter an audit ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE()}/api/v1/audit/results/${auditId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('status-results').innerHTML = `
+                        <div class="status completed">
+                            <strong>Audit Results</strong>
+                            <br><strong>URL:</strong> ${data.url}
+                            <br><strong>Overall Score:</strong> ${data.overall_score}/100
+                            <br><strong>Completed:</strong> ${new Date(data.completed_at).toLocaleString()}
+                        </div>
+                        <h4>Scores:</h4>
+                        <p>
+                            Security: ${data.security_score}/100 |
+                            Performance: ${data.performance_score}/100 |
+                            SEO: ${data.seo_score}/100 |
+                            UX: ${data.ux_score}/100 |
+                            Accessibility: ${data.accessibility_score}/100
+                        </p>
+                        <h4>AI Summary:</h4>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; white-space: pre-wrap;">${data.ai_summary}</div>
+                        <h4>Detailed Results:</h4>
+                        <pre>${JSON.stringify(data.results, null, 2)}</pre>
+                    `;
+                } else {
+                    document.getElementById('status-results').innerHTML = `
+                        <div class="status failed">
+                            <strong>Error:</strong> ${data.detail || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('status-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function startDemoAudit() {
+            const url = document.getElementById('audit-url').value;
+            if (!url) {
+                alert('Please enter a website URL');
+                return;
+            }
+            
+            try {
+                document.getElementById('audit-results').innerHTML = `
+                    <div class="status processing">
+                        <strong>Demo Audit Starting...</strong>
+                        <br>This may take 10-30 seconds to complete.
+                    </div>
+                `;
+                
+                const response = await fetch(`${API_BASE()}/api/v1/audit/demo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const getScoreClass = (score) => {
+                        if (score >= 80) return 'excellent';
+                        if (score >= 60) return 'good';
+                        if (score >= 40) return 'fair';
+                        return 'poor';
+                    };
+                    
+                    document.getElementById('audit-results').innerHTML = `
+                        <div class="status completed">
+                            <strong>Demo Audit Completed!</strong>
+                            <br><strong>URL:</strong> ${data.url}
+                            <br><strong>Status:</strong> ${data.status}
+                        </div>
+                        <div class="score ${getScoreClass(data.scores.overall)}">
+                            Overall Score: ${data.scores.overall}/100
+                        </div>
+                        <p>
+                            <strong>Category Scores:</strong><br>
+                            Security: ${data.scores.security}/100 |
+                            Performance: ${data.scores.performance}/100 |
+                            SEO: ${data.scores.seo}/100 |
+                            UX: ${data.scores.ux}/100 |
+                            Accessibility: ${data.scores.accessibility}/100
+                        </p>
+                        <h4>AI Summary:</h4>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; white-space: pre-wrap;">${data.ai_summary}</div>
+                        <h4>Detailed Results:</h4>
+                        <pre>${JSON.stringify(data.results, null, 2)}</pre>
+                        <p><em>Note: ${data.note}</em></p>
+                    `;
+                } else {
+                    document.getElementById('audit-results').innerHTML = `
+                        <div class="status failed">
+                            <strong>Error:</strong> ${data.detail || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('audit-results').innerHTML = `
+                    <div class="status failed">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-refresh status every 5 seconds when audit is in progress
+        let statusInterval;
+        
+        function startStatusPolling() {
+            if (statusInterval) clearInterval(statusInterval);
+            statusInterval = setInterval(() => {
+                const auditId = document.getElementById('audit-id').value;
+                if (auditId) {
+                    checkStatus();
+                }
+            }, 5000);
+        }
+        
+        // Test health on page load
+        window.addEventListener('load', () => {
+            testHealth();
+        });
+    </script>
+</body>
+</html>
