@@ -3,7 +3,7 @@ AI Analysis service using Google Gemini
 """
 
 import asyncio
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import structlog
 import google.generativeai as genai
 
@@ -46,6 +46,21 @@ class AIAnalyzer:
             logger.error("AI analysis failed", error=str(e), url=url)
             return self._generate_fallback_summary(url, audit_results, scores)
     
+    def _extract_issue_descriptions(self, issues: List[Any]) -> List[str]:
+        """Extract string descriptions from issues array that may contain both strings and objects"""
+        descriptions = []
+        for issue in issues:
+            if isinstance(issue, str):
+                descriptions.append(issue)
+            elif isinstance(issue, dict) and 'description' in issue:
+                descriptions.append(issue['description'])
+            elif isinstance(issue, dict) and 'message' in issue:
+                descriptions.append(issue['message'])
+            else:
+                # Convert other objects to string representation
+                descriptions.append(str(issue))
+        return descriptions
+    
     def _create_analysis_prompt(self, url: str, audit_results: Dict[str, Any], scores: Dict[str, float]) -> str:
         """Create comprehensive analysis prompt for Gemini"""
         
@@ -55,10 +70,10 @@ class AIAnalyzer:
         seo_score = scores.get("seo", 0)
         overall_score = scores.get("overall", 0)
         
-        # Get specific issues
-        security_issues = audit_results.get("security", {}).get("issues", [])
-        performance_issues = audit_results.get("performance", {}).get("issues", [])
-        seo_issues = audit_results.get("seo", {}).get("issues", [])
+        # Get specific issues and ensure they're strings
+        security_issues = self._extract_issue_descriptions(audit_results.get("security", {}).get("issues", []))
+        performance_issues = self._extract_issue_descriptions(audit_results.get("performance", {}).get("issues", []))
+        seo_issues = self._extract_issue_descriptions(audit_results.get("seo", {}).get("issues", []))
         
         # Get performance metrics
         response_time = audit_results.get("performance", {}).get("response_time", 0)
