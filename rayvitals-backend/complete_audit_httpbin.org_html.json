@@ -1,0 +1,246 @@
+{
+  "url": "https://httpbin.org/html",
+  "scores": {
+    "security": 50.0,
+    "performance": 45,
+    "accessibility": 76.9,
+    "ux": 67.5,
+    "overall": 59.4
+  },
+  "results": {
+    "security": {
+      "score": 50.0,
+      "issues": [
+        "Missing security header: HSTS",
+        "Missing security header: Content Type Options",
+        "Missing security header: Frame Options",
+        "Missing security header: XSS Protection",
+        "Missing security header: Content Security Policy",
+        "Missing security header: Referrer Policy"
+      ],
+      "recommendations": [
+        "Add HSTS header",
+        "Add Content Type Options header",
+        "Add Frame Options header",
+        "Add XSS Protection header",
+        "Add Content Security Policy header",
+        "Add Referrer Policy header"
+      ],
+      "ssl_info": {
+        "enabled": true,
+        "version": "TLSv1.2",
+        "cipher": [
+          "ECDHE-RSA-AES128-GCM-SHA256",
+          "TLSv1.2",
+          128
+        ],
+        "certificate_valid": true,
+        "expires_days": 62,
+        "issuer": {
+          "countryName": "US",
+          "organizationName": "Amazon",
+          "commonName": "Amazon RSA 2048 M02"
+        },
+        "subject": {
+          "commonName": "httpbin.org"
+        },
+        "score": 100
+      },
+      "security_headers": {
+        "headers": {},
+        "score": 0,
+        "missing_headers": [
+          "HSTS",
+          "Content Type Options",
+          "Frame Options",
+          "XSS Protection",
+          "Content Security Policy",
+          "Referrer Policy"
+        ]
+      },
+      "vulnerabilities": []
+    },
+    "performance": {
+      "score": 45,
+      "issues": [
+        "Slow response time: 2393.43ms",
+        "No compression enabled",
+        "No cache headers"
+      ],
+      "recommendations": [
+        "Optimize server performance and database queries",
+        "Enable gzip/brotli compression",
+        "Add cache headers for static resources"
+      ],
+      "metrics": {
+        "page_load_time": 2393.43,
+        "response_time": 2393.43,
+        "page_size": 3741,
+        "http_status": 200,
+        "redirects": 0,
+        "compression_enabled": false,
+        "keep_alive_enabled": true,
+        "cache_headers": {},
+        "content_type": "text/html; charset=utf-8",
+        "server_response_time": null
+      },
+      "page_load_time": 2393.43,
+      "response_time": 2393.43,
+      "page_size": 3741
+    },
+    "accessibility": {
+      "score": 76.9,
+      "issues": [
+        "Serious: Page does not have a title",
+        "Moderate: Page must have a main landmark",
+        "Serious: Elements must have sufficient color contrast",
+        "Semantic HTML: Missing main landmark",
+        "Semantic HTML: Missing navigation landmark"
+      ],
+      "recommendations": [
+        "Documents must have a title to aid in navigation",
+        "All page content must be contained by landmarks",
+        "Elements must have sufficient color contrast",
+        "Use proper HTML5 semantic elements and heading hierarchy",
+        "Use proper HTML5 semantic elements and heading hierarchy"
+      ],
+      "violations": [
+        {
+          "id": "document-title",
+          "impact": "serious",
+          "description": "Page does not have a title",
+          "help": "Documents must have a title to aid in navigation",
+          "tags": [
+            "wcag2a",
+            "wcag242"
+          ]
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "description": "Page must have a main landmark",
+          "help": "All page content must be contained by landmarks",
+          "tags": [
+            "wcag2a",
+            "wcag131"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Elements must have sufficient color contrast",
+          "help": "Elements must have sufficient color contrast",
+          "tags": [
+            "wcag2aa",
+            "wcag143"
+          ]
+        }
+      ],
+      "color_contrast": {
+        "score": 85,
+        "issues": [],
+        "total_elements": 3,
+        "compliant_elements": 3
+      },
+      "keyboard_navigation": {
+        "score": 75,
+        "issues": [],
+        "focusable_elements": 0,
+        "tab_order_issues": 0
+      },
+      "semantic_html": {
+        "score": 80,
+        "issues": [
+          "Missing main landmark",
+          "Missing navigation landmark"
+        ],
+        "semantic_elements": 0,
+        "heading_structure": {
+          "h1": 1
+        },
+        "landmarks": []
+      },
+      "aria_attributes": {
+        "score": 70,
+        "issues": [],
+        "aria_elements": 0,
+        "aria_errors": []
+      }
+    },
+    "ux": {
+      "score": 67.5,
+      "issues": [
+        "Mobile: Missing viewport meta tag",
+        "Navigation: No main navigation found",
+        "Navigation: No mobile navigation pattern detected",
+        "Readability: Found 1 very long paragraphs"
+      ],
+      "recommendations": [
+        "Add viewport meta tag for mobile optimization",
+        "Implement responsive images with srcset",
+        "Implement mobile-friendly navigation pattern"
+      ],
+      "mobile_responsiveness": {
+        "score": 65,
+        "issues": [
+          "Missing viewport meta tag"
+        ],
+        "viewport_configured": false,
+        "responsive_images": 0,
+        "fixed_width_elements": 0,
+        "mobile_friendly_fonts": true
+      },
+      "touch_targets": {
+        "score": 80,
+        "issues": [],
+        "interactive_elements": 0,
+        "potential_small_targets": 0,
+        "close_elements": 0
+      },
+      "navigation": {
+        "score": 40,
+        "issues": [
+          "No main navigation found",
+          "No mobile navigation pattern detected"
+        ],
+        "main_navigation": false,
+        "breadcrumbs": false,
+        "search_functionality": false,
+        "navigation_depth": 0,
+        "mobile_navigation": false
+      },
+      "readability": {
+        "score": 75,
+        "issues": [
+          "Found 1 very long paragraphs"
+        ],
+        "text_content": "Herman Melville - Moby-Dick Availing himself of the mild, summer-cool weather that now reigned in these latitudes, and in preparation for the peculiarly active pursuits shortly to be anticipated, Perth, the begrimed, blistered old blacksmith, had not removed his portable forge to the hold again, after concluding his contributory work for Ahab's leg, but still retained it on deck, fast lashed to ringbolts by the foremast; being now almost incessantly invoked by the headsmen, and harpooneers, and ",
+        "word_count": 1206,
+        "paragraph_count": 1,
+        "heading_distribution": {
+          "h1": 1
+        },
+        "font_size_issues": 0,
+        "text_color_contrast": true
+      },
+      "layout_stability": {
+        "score": 85,
+        "issues": [],
+        "images_without_dimensions": 0,
+        "dynamic_content_indicators": 0,
+        "loading_indicators": false,
+        "font_loading_optimization": false
+      },
+      "form_usability": {
+        "score": 90,
+        "issues": [],
+        "forms_found": 0,
+        "inputs_with_labels": 0,
+        "inputs_without_labels": 0,
+        "required_field_indicators": 0,
+        "error_handling": false
+      }
+    }
+  },
+  "processing_time": 16.915308237075806
+}

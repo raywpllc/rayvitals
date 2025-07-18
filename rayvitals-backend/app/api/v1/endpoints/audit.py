@@ -205,9 +205,13 @@ async def demo_audit(request: AuditStartRequest):
         performance_scanner = PerformanceScanner()
         ai_analyzer = AIAnalyzer()
         
-        # Run scans
+        # Run scans with enhanced anti-blocking features
         security_results = await security_scanner.scan_website(str(request.url))
         performance_results = await performance_scanner.scan_website(str(request.url))
+        
+        # Add accessibility and UX scanners (enhanced)
+        accessibility_results = await audit_service.accessibility_scanner.scan_website(str(request.url))
+        ux_results = await audit_service.ux_scanner.scan_website(str(request.url))
         
         # Basic SEO analysis
         seo_results = await audit_service._basic_seo_analysis(str(request.url))
@@ -216,7 +220,9 @@ async def demo_audit(request: AuditStartRequest):
         audit_results = {
             "security": security_results,
             "performance": performance_results,
-            "seo": seo_results
+            "seo": seo_results,
+            "accessibility": accessibility_results,
+            "ux": ux_results
         }
         
         # Calculate scores

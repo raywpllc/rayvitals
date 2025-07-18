@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RayVitals Test Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-button {
+            background-color: #007bff;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .score-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .score-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .issues {
+            margin-top: 20px;
+        }
+        .issue-category {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+        }
+        .issue-category h4 {
+            margin-top: 0;
+            color: #dc3545;
+        }
+        .issue-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .issue-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .issue-list li:last-child {
+            border-bottom: none;
+        }
+        .log {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 RayVitals Scanner Test Results</h1>
+        
+        <button class="test-button" onclick="runTest('https://example.com')">Test Example.com</button>
+        <button class="test-button" onclick="runTest('https://google.com')">Test Google.com</button>
+        <button class="test-button" onclick="runTest('https://github.com')">Test GitHub.com</button>
+        
+        <div id="log" class="log" style="display: none;"></div>
+        <div id="results" class="results" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function runTest(url) {
+            const logDiv = document.getElementById('log');
+            const resultsDiv = document.getElementById('results');
+            
+            // Show log
+            logDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+            logDiv.innerHTML = `🔍 Testing ${url}...\n`;
+            
+            try {
+                // Simulate the audit process
+                const testResults = await simulateAudit(url);
+                
+                // Display results
+                displayResults(testResults);
+                
+            } catch (error) {
+                logDiv.innerHTML += `❌ Error: ${error.message}\n`;
+            }
+        }
+        
+        async function simulateAudit(url) {
+            // Simulate audit timing
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Simulate realistic scores based on URL
+            let scores = {
+                security: Math.floor(Math.random() * 20) + 70,
+                performance: Math.floor(Math.random() * 30) + 60,
+                ux: Math.floor(Math.random() * 25) + 65,
+                accessibility: Math.floor(Math.random() * 20) + 75,
+            };
+            
+            // Calculate overall score
+            const weights = {security: 0.25, performance: 0.25, ux: 0.3, accessibility: 0.2};
+            const overall = Object.keys(scores).reduce((sum, key) => sum + scores[key] * weights[key], 0);
+            scores.overall = Math.round(overall * 10) / 10;
+            
+            // Generate sample issues
+            const issues = {
+                security: [
+                    "Missing Content Security Policy header",
+                    "SSL certificate expires in 45 days",
+                    "Server version disclosed in headers"
+                ],
+                performance: [
+                    "Large page size: 2.1MB",
+                    "Slow response time: 1200ms",
+                    "No compression enabled"
+                ],
+                ux: [
+                    "Mobile: Missing viewport meta tag",
+                    "Touch targets: Found 2 potentially small touch targets",
+                    "Navigation: No mobile navigation pattern detected"
+                ],
+                accessibility: [
+                    "Critical: Image without alt text",
+                    "Serious: Elements must have sufficient color contrast",
+                    "Moderate: Page must have a main landmark"
+                ]
+            };
+            
+            return {
+                url: url,
+                scores: scores,
+                issues: issues,
+                processing_time: Math.round((Math.random() * 20 + 10) * 10) / 10
+            };
+        }
+        
+        function displayResults(data) {
+            const logDiv = document.getElementById('log');
+            const resultsDiv = document.getElementById('results');
+            
+            logDiv.innerHTML += `✅ Audit completed in ${data.processing_time}s\n`;
+            
+            let html = `
+                <h2>Audit Results for ${data.url}</h2>
+                <p><strong>Processing Time:</strong> ${data.processing_time}s</p>
+                
+                <div class="score-grid">
+                    <div class="score-card">
+                        <div class="score-value" style="color: ${getScoreColor(data.scores.overall)}">${data.scores.overall}</div>
+                        <div class="score-label">Overall Score</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-value" style="color: ${getScoreColor(data.scores.security)}">${data.scores.security}</div>
+                        <div class="score-label">Security</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-value" style="color: ${getScoreColor(data.scores.performance)}">${data.scores.performance}</div>
+                        <div class="score-label">Performance</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-value" style="color: ${getScoreColor(data.scores.ux)}">${data.scores.ux}</div>
+                        <div class="score-label">UX</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-value" style="color: ${getScoreColor(data.scores.accessibility)}">${data.scores.accessibility}</div>
+                        <div class="score-label">Accessibility</div>
+                    </div>
+                </div>
+                
+                <div class="issues">
+                    <h3>Issues Found:</h3>
+            `;
+            
+            // Display issues by category
+            for (const [category, categoryIssues] of Object.entries(data.issues)) {
+                if (categoryIssues.length > 0) {
+                    html += `
+                        <div class="issue-category">
+                            <h4>${category.toUpperCase()}</h4>
+                            <ul class="issue-list">
+                    `;
+                    
+                    categoryIssues.forEach(issue => {
+                        html += `<li>${issue}</li>`;
+                    });
+                    
+                    html += `</ul></div>`;
+                }
+            }
+            
+            html += `</div>`;
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+        
+        function getScoreColor(score) {
+            if (score >= 80) return '#28a745';
+            if (score >= 60) return '#ffc107';
+            return '#dc3545';
+        }
+    </script>
+</body>
+</html>

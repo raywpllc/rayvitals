@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify Local API</title>
+</head>
+<body>
+    <h1>Verify Local API</h1>
+    <button onclick="testAPI()">Test Local API</button>
+    <pre id="result"></pre>
+    
+    <script>
+    async function testAPI() {
+        const resultEl = document.getElementById('result');
+        resultEl.textContent = 'Testing...';
+        
+        try {
+            const response = await fetch('http://localhost:8000/api/v1/audit/demo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: 'https://tailfin.com' })
+            });
+            
+            const data = await response.json();
+            
+            resultEl.textContent = 'Categories found: ' + Object.keys(data.results).join(', ') + '\n\n';
+            resultEl.textContent += 'Scores:\n';
+            resultEl.textContent += JSON.stringify(data.scores, null, 2) + '\n\n';
+            resultEl.textContent += 'Security Headers Score: ' + data.results.security.security_headers.score;
+            
+        } catch (error) {
+            resultEl.textContent = 'Error: ' + error.message;
+        }
+    }
+    </script>
+</body>
+</html>

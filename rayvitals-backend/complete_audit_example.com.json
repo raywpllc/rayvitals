@@ -1,0 +1,235 @@
+{
+  "url": "https://example.com",
+  "scores": {
+    "security": 50.0,
+    "performance": 100,
+    "accessibility": 80.9,
+    "ux": 71.3,
+    "overall": 75.1
+  },
+  "results": {
+    "security": {
+      "score": 50.0,
+      "issues": [
+        "Missing security header: HSTS",
+        "Missing security header: Content Type Options",
+        "Missing security header: Frame Options",
+        "Missing security header: XSS Protection",
+        "Missing security header: Content Security Policy",
+        "Missing security header: Referrer Policy"
+      ],
+      "recommendations": [
+        "Add HSTS header",
+        "Add Content Type Options header",
+        "Add Frame Options header",
+        "Add XSS Protection header",
+        "Add Content Security Policy header",
+        "Add Referrer Policy header"
+      ],
+      "ssl_info": {
+        "enabled": true,
+        "version": "TLSv1.3",
+        "cipher": [
+          "TLS_AES_256_GCM_SHA384",
+          "TLSv1.3",
+          256
+        ],
+        "certificate_valid": true,
+        "expires_days": 182,
+        "issuer": {
+          "countryName": "US",
+          "organizationName": "DigiCert Inc",
+          "commonName": "DigiCert Global G3 TLS ECC SHA384 2020 CA1"
+        },
+        "subject": {
+          "countryName": "US",
+          "stateOrProvinceName": "California",
+          "localityName": "Los Angeles",
+          "organizationName": "Internet Corporation for Assigned Names and Numbers",
+          "commonName": "*.example.com"
+        },
+        "score": 100
+      },
+      "security_headers": {
+        "headers": {},
+        "score": 0,
+        "missing_headers": [
+          "HSTS",
+          "Content Type Options",
+          "Frame Options",
+          "XSS Protection",
+          "Content Security Policy",
+          "Referrer Policy"
+        ]
+      },
+      "vulnerabilities": []
+    },
+    "performance": {
+      "score": 100,
+      "issues": [],
+      "recommendations": [],
+      "metrics": {
+        "page_load_time": 214.03,
+        "response_time": 214.03,
+        "page_size": 1256,
+        "http_status": 200,
+        "redirects": 0,
+        "compression_enabled": true,
+        "keep_alive_enabled": true,
+        "cache_headers": {
+          "cache-control": "max-age=1033",
+          "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
+          "etag": "\"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134\""
+        },
+        "content_type": "text/html",
+        "server_response_time": null
+      },
+      "page_load_time": 214.03,
+      "response_time": 214.03,
+      "page_size": 1256
+    },
+    "accessibility": {
+      "score": 80.9,
+      "issues": [
+        "Moderate: Page must have a main landmark",
+        "Serious: Elements must have sufficient color contrast",
+        "Keyboard navigation: Verify focus indicators are visible for all interactive elements",
+        "Semantic HTML: Missing main landmark",
+        "Semantic HTML: Missing navigation landmark"
+      ],
+      "recommendations": [
+        "All page content must be contained by landmarks",
+        "Elements must have sufficient color contrast",
+        "Ensure all interactive elements are keyboard accessible",
+        "Use proper HTML5 semantic elements and heading hierarchy",
+        "Use proper HTML5 semantic elements and heading hierarchy"
+      ],
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "description": "Page must have a main landmark",
+          "help": "All page content must be contained by landmarks",
+          "tags": [
+            "wcag2a",
+            "wcag131"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Elements must have sufficient color contrast",
+          "help": "Elements must have sufficient color contrast",
+          "tags": [
+            "wcag2aa",
+            "wcag143"
+          ]
+        }
+      ],
+      "color_contrast": {
+        "score": 85,
+        "issues": [],
+        "total_elements": 6,
+        "compliant_elements": 6
+      },
+      "keyboard_navigation": {
+        "score": 75,
+        "issues": [
+          "Verify focus indicators are visible for all interactive elements"
+        ],
+        "focusable_elements": 1,
+        "tab_order_issues": 0
+      },
+      "semantic_html": {
+        "score": 80,
+        "issues": [
+          "Missing main landmark",
+          "Missing navigation landmark"
+        ],
+        "semantic_elements": 0,
+        "heading_structure": {
+          "h1": 1
+        },
+        "landmarks": []
+      },
+      "aria_attributes": {
+        "score": 70,
+        "issues": [],
+        "aria_elements": 0,
+        "aria_errors": []
+      }
+    },
+    "ux": {
+      "score": 71.3,
+      "issues": [
+        "Navigation: No main navigation found",
+        "Navigation: No mobile navigation pattern detected",
+        "Readability: Very little text content"
+      ],
+      "recommendations": [
+        "Implement responsive images with srcset",
+        "Implement mobile-friendly navigation pattern",
+        "Add more descriptive content for better user understanding"
+      ],
+      "mobile_responsiveness": {
+        "score": 85,
+        "issues": [],
+        "viewport_configured": true,
+        "responsive_images": 0,
+        "fixed_width_elements": 0,
+        "mobile_friendly_fonts": true
+      },
+      "touch_targets": {
+        "score": 80,
+        "issues": [],
+        "interactive_elements": 1,
+        "potential_small_targets": 0,
+        "close_elements": 0
+      },
+      "navigation": {
+        "score": 40,
+        "issues": [
+          "No main navigation found",
+          "No mobile navigation pattern detected"
+        ],
+        "main_navigation": false,
+        "breadcrumbs": false,
+        "search_functionality": false,
+        "navigation_depth": 0,
+        "mobile_navigation": false
+      },
+      "readability": {
+        "score": 65,
+        "issues": [
+          "Very little text content"
+        ],
+        "text_content": "Example Domain\nThis domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.\nMore information... Example Domain This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission. More information...",
+        "word_count": 56,
+        "paragraph_count": 2,
+        "heading_distribution": {
+          "h1": 1
+        },
+        "font_size_issues": 0,
+        "text_color_contrast": true
+      },
+      "layout_stability": {
+        "score": 85,
+        "issues": [],
+        "images_without_dimensions": 0,
+        "dynamic_content_indicators": 0,
+        "loading_indicators": false,
+        "font_loading_optimization": false
+      },
+      "form_usability": {
+        "score": 90,
+        "issues": [],
+        "forms_found": 0,
+        "inputs_with_labels": 0,
+        "inputs_without_labels": 0,
+        "required_field_indicators": 0,
+        "error_handling": false
+      }
+    }
+  },
+  "processing_time": 2.7578330039978027
+}

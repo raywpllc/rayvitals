@@ -1,0 +1,116 @@
+{
+  "scores": {
+    "security": 50.0,
+    "performance": 60,
+    "seo": 75,
+    "ux": 0,
+    "accessibility": 0,
+    "overall": 42.5
+  },
+  "results": {
+    "security": {
+      "score": 50.0,
+      "issues": [
+        "Missing security header: HSTS",
+        "Missing security header: Content Type Options",
+        "Missing security header: Frame Options",
+        "Missing security header: XSS Protection",
+        "Missing security header: Content Security Policy",
+        "Missing security header: Referrer Policy"
+      ],
+      "recommendations": [
+        "Add HSTS header",
+        "Add Content Type Options header",
+        "Add Frame Options header",
+        "Add XSS Protection header",
+        "Add Content Security Policy header",
+        "Add Referrer Policy header"
+      ],
+      "ssl_info": {
+        "enabled": true,
+        "version": "TLSv1.3",
+        "cipher": [
+          "TLS_AES_256_GCM_SHA384",
+          "TLSv1.3",
+          256
+        ],
+        "certificate_valid": true,
+        "expires_days": 82,
+        "issuer": {
+          "countryName": "US",
+          "organizationName": "Let's Encrypt",
+          "commonName": "E5"
+        },
+        "subject": {
+          "commonName": "raywp.com"
+        },
+        "score": 100
+      },
+      "security_headers": {
+        "headers": {},
+        "score": 0,
+        "missing_headers": [
+          "HSTS",
+          "Content Type Options",
+          "Frame Options",
+          "XSS Protection",
+          "Content Security Policy",
+          "Referrer Policy"
+        ]
+      },
+      "vulnerabilities": []
+    },
+    "performance": {
+      "score": 60,
+      "issues": [
+        "HTTP error: 403",
+        "No cache headers"
+      ],
+      "recommendations": [
+        "Fix HTTP errors and broken links",
+        "Add cache headers for static resources"
+      ],
+      "metrics": {
+        "page_load_time": 287.15,
+        "response_time": 287.15,
+        "page_size": 1084,
+        "http_status": 403,
+        "redirects": 0,
+        "compression_enabled": true,
+        "keep_alive_enabled": true,
+        "cache_headers": {},
+        "content_type": "text/html",
+        "server_response_time": null
+      },
+      "page_load_time": 287.15,
+      "response_time": 287.15,
+      "page_size": 1084
+    },
+    "ux": {
+      "score": 0,
+      "issues": [
+        "UX scan failed: HTTP 403 error"
+      ],
+      "recommendations": [],
+      "mobile_responsiveness": {},
+      "touch_targets": {},
+      "navigation": {},
+      "readability": {},
+      "layout_stability": {},
+      "form_usability": {}
+    },
+    "accessibility": {
+      "score": 0,
+      "issues": [
+        "Accessibility scan failed: HTTP 403 error"
+      ],
+      "recommendations": [],
+      "violations": [],
+      "color_contrast": {},
+      "keyboard_navigation": {},
+      "semantic_html": {},
+      "aria_attributes": {}
+    }
+  },
+  "processing_time": 2.915850877761841
+}

@@ -18,7 +18,10 @@ from app.core.database import get_session_factory
 from app.models.audit import AuditRequest, AuditResult, AuditMetrics
 from app.services.security_scanner import SecurityScanner
 from app.services.performance_scanner import PerformanceScanner
+from app.services.accessibility_scanner import AccessibilityScanner
+from app.services.ux_scanner import UXScanner
 from app.services.ai_analyzer import AIAnalyzer
+from app.services.content_fetcher import ContentFetcher
 
 logger = structlog.get_logger()
 
@@ -29,7 +32,10 @@ class AuditService:
     def __init__(self):
         self.security_scanner = SecurityScanner()
         self.performance_scanner = PerformanceScanner()
+        self.accessibility_scanner = AccessibilityScanner()
+        self.ux_scanner = UXScanner()
         self.ai_analyzer = AIAnalyzer()
+        self.content_fetcher = ContentFetcher()
     
     async def process_audit(self, audit_id: str, url: str) -> None:
         """Process a complete website audit"""
@@ -77,6 +83,16 @@ class AuditService:
                 logger.info("Running basic SEO analysis", audit_id=audit_id)
                 seo_results = await self._basic_seo_analysis(url)
                 audit_results["seo"] = seo_results
+                
+                # UX analysis
+                logger.info("Running UX analysis", audit_id=audit_id)
+                ux_results = await self.ux_scanner.scan_website(url)
+                audit_results["ux"] = ux_results
+                
+                # Accessibility analysis
+                logger.info("Running accessibility analysis", audit_id=audit_id)
+                accessibility_results = await self.accessibility_scanner.scan_website(url)
+                audit_results["accessibility"] = accessibility_results
                 
                 # Calculate scores
                 scores = self._calculate_scores(audit_results)
@@ -130,6 +146,33 @@ class AuditService:
             
             raise
     
+    def _get_seo_location(self, url: str, issue_type: str, details: str = "") -> Dict[str, Any]:
+        """Get location information for SEO issues"""
+        location = {
+            "url": url,
+            "selector": "",
+            "html_snippet": "",
+            "line_number": None
+        }
+        
+        if issue_type == "title":
+            location["selector"] = "head > title"
+            location["html_snippet"] = f"Missing or empty title tag"
+        elif issue_type == "meta_description":
+            location["selector"] = "head > meta[name='description']"
+            location["html_snippet"] = f"Missing meta description tag"
+        elif issue_type == "h1":
+            location["selector"] = "h1"
+            location["html_snippet"] = f"Missing H1 tag"
+        elif issue_type == "viewport":
+            location["selector"] = "head > meta[name='viewport']"
+            location["html_snippet"] = f"Missing viewport meta tag"
+        else:
+            location["selector"] = "general"
+            location["html_snippet"] = f"SEO issue: {details}"
+        
+        return location
+    
     async def _basic_seo_analysis(self, url: str) -> Dict[str, Any]:
         """Basic SEO analysis"""
         results = {
@@ -139,44 +182,76 @@ class AuditService:
         }
         
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(url)
-                
-                if response.status_code != 200:
-                    results["issues"].append(f"HTTP status: {response.status_code}")
+            # Use content fetcher with anti-blocking measures
+            content_result = await self.content_fetcher.fetch_page_content(url)
+            
+            if content_result.get("error"):
+                # Handle 403 errors gracefully
+                if "403" in str(content_result.get("error")):
+                    results["score"] = 75  # Neutral score for bot blocking
+                    results["issues"].append("⚠️ Automated access blocked - this is NOT an SEO issue")
+                    results["recommendations"].append("Manual SEO review recommended")
+                    return results
+                else:
+                    results["issues"].append(f"Error: {content_result.get('error')}")
                     results["score"] = 20
                     return results
-                
-                html_content = response.text
-                
-                # Basic SEO checks
-                score = 100
-                
-                # Title tag
-                if "<title>" not in html_content.lower():
-                    results["issues"].append("Missing title tag")
-                    results["recommendations"].append("Add a descriptive title tag")
-                    score -= 20
-                
-                # Meta description
-                if 'name="description"' not in html_content.lower():
-                    results["issues"].append("Missing meta description")
-                    results["recommendations"].append("Add a meta description")
-                    score -= 15
-                
-                # H1 tag
-                if "<h1>" not in html_content.lower():
-                    results["issues"].append("Missing H1 tag")
-                    results["recommendations"].append("Add an H1 tag")
-                    score -= 10
-                
-                # Mobile viewport
-                if 'name="viewport"' not in html_content.lower():
-                    results["issues"].append("Missing viewport meta tag")
-                    results["recommendations"].append("Add viewport meta tag for mobile")
-                    score -= 15
-                
-                results["score"] = max(0, score)
+            
+            html_content = content_result.get("html", "")
+            
+            if not html_content:
+                results["issues"].append("No content retrieved")
+                results["score"] = 20
+                return results
+            
+            # Basic SEO checks
+            score = 100
+            
+            # Title tag
+            if "<title>" not in html_content.lower():
+                results["issues"].append({
+                    "description": "Missing title tag",
+                    "location": self._get_seo_location(url, "title", "Missing title tag"),
+                    "severity": "high",
+                    "help": "Add a descriptive title tag"
+                })
+                results["recommendations"].append("Add a descriptive title tag")
+                score -= 20
+            
+            # Meta description
+            if 'name="description"' not in html_content.lower():
+                results["issues"].append({
+                    "description": "Missing meta description",
+                    "location": self._get_seo_location(url, "meta_description", "Missing meta description"),
+                    "severity": "medium",
+                    "help": "Add a meta description"
+                })
+                results["recommendations"].append("Add a meta description")
+                score -= 15
+            
+            # H1 tag
+            if "<h1>" not in html_content.lower():
+                results["issues"].append({
+                    "description": "Missing H1 tag",
+                    "location": self._get_seo_location(url, "h1", "Missing H1 tag"),
+                    "severity": "medium",
+                    "help": "Add an H1 tag"
+                })
+                results["recommendations"].append("Add an H1 tag")
+                score -= 10
+            
+            # Mobile viewport
+            if 'name="viewport"' not in html_content.lower():
+                results["issues"].append({
+                    "description": "Missing viewport meta tag",
+                    "location": self._get_seo_location(url, "viewport", "Missing viewport meta tag"),
+                    "severity": "medium",
+                    "help": "Add viewport meta tag for mobile"
+                })
+                results["recommendations"].append("Add viewport meta tag for mobile")
+                score -= 15
+            
+            results["score"] = max(0, score)
                 
         except Exception as e:
             logger.error("SEO analysis failed", error=str(e), url=url)
@@ -191,8 +266,8 @@ class AuditService:
             "security": audit_results.get("security", {}).get("score", 0),
             "performance": audit_results.get("performance", {}).get("score", 0),
             "seo": audit_results.get("seo", {}).get("score", 0),
-            "ux": 85,  # Placeholder
-            "accessibility": 80,  # Placeholder
+            "ux": audit_results.get("ux", {}).get("score", 0),
+            "accessibility": audit_results.get("accessibility", {}).get("score", 0),
         }
         
         # Calculate overall score with weights from spec

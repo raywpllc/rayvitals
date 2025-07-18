@@ -87,7 +87,7 @@
             <h2>🧪 API Configuration</h2>
             <div class="form-group">
                 <label for="api-base">API Base URL:</label>
-                <input type="url" id="api-base" value="https://rayvitals-backend-xwq86.ondigitalocean.app">
+                <input type="url" id="api-base" value="http://localhost:8000">
             </div>
             <p><strong>Note:</strong> Make sure the RayVitals backend is running on the specified URL.</p>
         </div>
@@ -98,12 +98,10 @@
             const baseUrl = document.getElementById('api-base').value;
             console.log('Raw API base URL from input:', baseUrl);
             
-            // Force production URL if localhost is detected
+            // Allow localhost for local testing
             if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
-                const productionUrl = 'https://rayvitals-backend-xwq86.ondigitalocean.app';
-                console.log('Localhost detected, forcing production URL:', productionUrl);
-                document.getElementById('api-base').value = productionUrl;
-                return productionUrl;
+                console.log('Using localhost for local testing:', baseUrl);
+                return baseUrl;
             }
             
             // Ensure we have a full URL
@@ -317,7 +315,9 @@
                         </p>
                         <h4>AI Summary:</h4>
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; white-space: pre-wrap;">${data.ai_summary}</div>
-                        <h4>Detailed Results:</h4>
+                        <h4>Enhanced Scanner Results:</h4>
+                        ${displayEnhancedResults(data.results)}
+                        <h4>Raw Data:</h4>
                         <pre>${JSON.stringify(data.results, null, 2)}</pre>
                     `;
                 } else {
@@ -344,17 +344,22 @@
             }
             
             try {
+                const apiUrl = `${API_BASE()}/api/v1/audit/demo?t=${Date.now()}`;
+                console.log('Calling API:', apiUrl);
+                
                 document.getElementById('audit-results').innerHTML = `
                     <div class="status processing">
                         <strong>Demo Audit Starting...</strong>
                         <br>This may take 10-30 seconds to complete.
+                        <br><small>API: ${apiUrl}</small>
                     </div>
                 `;
                 
-                const response = await fetch(`${API_BASE()}/api/v1/audit/demo`, {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache',
                     },
                     body: JSON.stringify({ url: url })
                 });
@@ -388,7 +393,9 @@
                         </p>
                         <h4>AI Summary:</h4>
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; white-space: pre-wrap;">${data.ai_summary}</div>
-                        <h4>Detailed Results:</h4>
+                        <h4>Enhanced Scanner Results:</h4>
+                        ${displayEnhancedResults(data.results)}
+                        <h4>Raw Data:</h4>
                         <pre>${JSON.stringify(data.results, null, 2)}</pre>
                         <p><em>Note: ${data.note}</em></p>
                     `;
@@ -748,6 +755,123 @@
                     </div>
                 `;
             }
+        }
+
+        // Function to display enhanced results with better formatting
+        function displayEnhancedResults(results) {
+            if (!results || typeof results !== 'object') {
+                return '<p>No detailed results available</p>';
+            }
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-top: 15px;">';
+            
+            for (const [category, categoryData] of Object.entries(results)) {
+                if (categoryData && typeof categoryData === 'object') {
+                    html += `
+                        <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                            <h4 style="margin-top: 0; color: #333; text-transform: uppercase;">${category}</h4>
+                            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: ${getScoreColor(categoryData.score)};">
+                                Score: ${categoryData.score || 'N/A'}
+                            </div>
+                    `;
+                    
+                    // Show key metrics based on category
+                    if (category === 'security' && categoryData.ssl_info) {
+                        html += '<div style="margin-bottom: 10px;"><strong>SSL Information:</strong>';
+                        html += `<br>• SSL Enabled: ${categoryData.ssl_info.enabled ? '✅' : '❌'}`;
+                        if (categoryData.ssl_info.version) {
+                            html += `<br>• Version: ${categoryData.ssl_info.version}`;
+                        }
+                        if (categoryData.ssl_info.expires_days) {
+                            html += `<br>• Expires in: ${categoryData.ssl_info.expires_days} days`;
+                        }
+                        html += '</div>';
+                    }
+                    
+                    if (category === 'performance' && categoryData.metrics) {
+                        html += '<div style="margin-bottom: 10px;"><strong>Performance Metrics:</strong>';
+                        if (categoryData.metrics.response_time) {
+                            html += `<br>• Response Time: ${categoryData.metrics.response_time}ms`;
+                        }
+                        if (categoryData.metrics.page_size) {
+                            html += `<br>• Page Size: ${Math.round(categoryData.metrics.page_size / 1024)}KB`;
+                        }
+                        if (categoryData.metrics.http_status) {
+                            html += `<br>• HTTP Status: ${categoryData.metrics.http_status}`;
+                        }
+                        html += '</div>';
+                    }
+                    
+                    if (category === 'accessibility' && categoryData.violations) {
+                        html += `<div style="margin-bottom: 10px;"><strong>Accessibility:</strong>`;
+                        html += `<br>• Violations Found: ${categoryData.violations.length}`;
+                        if (categoryData.color_contrast && categoryData.color_contrast.score) {
+                            html += `<br>• Color Contrast Score: ${categoryData.color_contrast.score}`;
+                        }
+                        html += '</div>';
+                    }
+                    
+                    if (category === 'ux') {
+                        html += '<div style="margin-bottom: 10px;"><strong>UX Analysis:</strong>';
+                        if (categoryData.mobile_responsiveness && categoryData.mobile_responsiveness.viewport_configured) {
+                            html += `<br>• Mobile Viewport: ${categoryData.mobile_responsiveness.viewport_configured ? '✅' : '❌'}`;
+                        }
+                        if (categoryData.touch_targets && categoryData.touch_targets.interactive_elements) {
+                            html += `<br>• Interactive Elements: ${categoryData.touch_targets.interactive_elements}`;
+                        }
+                        if (categoryData.navigation && categoryData.navigation.main_navigation !== undefined) {
+                            html += `<br>• Main Navigation: ${categoryData.navigation.main_navigation ? '✅' : '❌'}`;
+                        }
+                        html += '</div>';
+                    }
+                    
+                    // Show issues (limited to first 3, filter out 403 errors)
+                    if (categoryData.issues && categoryData.issues.length > 0) {
+                        // Filter out 403 errors and bot blocking messages
+                        const filteredIssues = categoryData.issues.filter(issue => 
+                            !issue.includes('403') && 
+                            !issue.includes('⚠️ Automated access blocked') &&
+                            !issue.includes('HTTP error: 403') &&
+                            !issue.includes('Request blocked')
+                        );
+                        
+                        if (filteredIssues.length > 0) {
+                            html += '<div style="margin-bottom: 10px;"><strong>Key Issues:</strong>';
+                            filteredIssues.slice(0, 3).forEach(issue => {
+                                html += `<br>• ${issue}`;
+                            });
+                            if (filteredIssues.length > 3) {
+                                html += `<br>... and ${filteredIssues.length - 3} more issues`;
+                            }
+                            html += '</div>';
+                        }
+                    }
+                    
+                    // Show recommendations (limited to first 2)
+                    if (categoryData.recommendations && categoryData.recommendations.length > 0) {
+                        html += '<div style="margin-bottom: 10px; color: #0056b3;"><strong>Recommendations:</strong>';
+                        categoryData.recommendations.slice(0, 2).forEach(rec => {
+                            html += `<br>💡 ${rec}`;
+                        });
+                        if (categoryData.recommendations.length > 2) {
+                            html += `<br>... and ${categoryData.recommendations.length - 2} more recommendations`;
+                        }
+                        html += '</div>';
+                    }
+                    
+                    html += '</div>';
+                }
+            }
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function getScoreColor(score) {
+            if (score >= 80) return '#28a745';
+            if (score >= 60) return '#ffc107';
+            if (score >= 40) return '#fd7e14';
+            return '#dc3545';
         }
 
         // Initialize page on load

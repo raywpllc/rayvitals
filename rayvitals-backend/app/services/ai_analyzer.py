@@ -84,15 +84,13 @@ Performance Issues: {', '.join(performance_issues[:3]) if performance_issues els
 SEO Issues: {', '.join(seo_issues[:3]) if seo_issues else 'None detected'}
 
 ANALYSIS REQUIREMENTS:
-Provide a concise executive summary (2-3 paragraphs) that includes:
+Provide a concise executive summary (2 paragraphs) that includes:
 
-1. **Business Impact Assessment**: How do these technical issues affect revenue, conversions, and user experience?
+1. **Overall Assessment**: Provide a balanced evaluation of the website's technical health and user experience. Focus on opportunities for improvement rather than criticizing current performance. Avoid specific revenue predictions or loss estimates.
 
-2. **Priority Recommendations**: What are the top 3 most critical issues to address first, and why?
+2. **Priority Recommendations**: List the top 3 most critical issues to address first as bullet points, explaining why each is important for user experience and site performance.
 
-3. **ROI Estimation**: What business improvements can be expected from addressing these issues?
-
-Focus on business outcomes rather than technical details. Use clear, non-technical language suitable for executives making budget decisions.
+Focus on constructive guidance and actionable improvements. Use clear, professional language suitable for business decision-makers.
 """
         
         return prompt
@@ -130,18 +128,18 @@ Focus on business outcomes rather than technical details. Use clear, non-technic
         # Generate summary
         summary = f"""**Website Health Assessment**
 
-Your website scored {overall_score}/100 overall, indicating {health_status} technical health with {impact_level} impact on business performance.
+Your website scored {overall_score}/100 overall, indicating {health_status} technical health. There are opportunities to enhance user experience and site performance.
 
-**Critical Areas Requiring Attention:**
+**Priority Areas for Improvement:**
 {', '.join(critical_areas).title() if critical_areas else 'No critical issues identified'}
 
-**Business Impact:**
-- Security Score ({security_score}/100): {'⚠️ Security issues may damage user trust and SEO rankings' if security_score < 60 else '✅ Strong security foundation'}
-- Performance Score ({performance_score}/100): {'⚠️ Slow loading may reduce conversions by up to 20%' if performance_score < 60 else '✅ Good performance supporting user experience'}
-- SEO Score ({seo_score}/100): {'⚠️ Technical SEO issues may reduce organic traffic' if seo_score < 60 else '✅ Solid SEO foundation'}
+**Key Recommendations:**
+• Security Score ({security_score}/100): {'Consider implementing additional security headers for enhanced protection' if security_score < 60 else '✅ Strong security foundation'}
+• Performance Score ({performance_score}/100): {'Optimize loading speeds to improve user experience' if performance_score < 60 else '✅ Good performance supporting user experience'}  
+• SEO Score ({seo_score}/100): {'Improve technical SEO elements for better search visibility' if seo_score < 60 else '✅ Solid SEO foundation'}
 
 **Next Steps:**
-Focus on addressing the lowest-scoring areas first, as these typically provide the highest ROI when improved.
+Focus on addressing the highest-impact improvements first for the best results.
 
 *Note: This is a basic analysis. Enable AI analysis for detailed business intelligence and strategic recommendations.*
 """
