@@ -208,7 +208,10 @@ class PerformanceScanner:
         
         # HTTP status
         http_status = perf_metrics.get("http_status", 200)
-        if http_status >= 400:
+        if http_status == 403:
+            # 403 is typically bot blocking, not a performance issue - minimal penalty
+            score -= 5
+        elif http_status >= 400:
             score -= 30
         elif http_status >= 300:
             score -= 10
@@ -300,7 +303,16 @@ class PerformanceScanner:
         
         # HTTP status issues
         http_status = perf_metrics.get("http_status", 200)
-        if http_status >= 400:
+        if http_status == 403:
+            # 403 is typically bot blocking, not a site issue
+            issues.append({
+                "description": "⚠️ Automated access blocked (403) - this is NOT a website performance issue",
+                "location": self._get_performance_location(url, "http_status", "403 (Bot blocked)"),
+                "severity": "low",
+                "help": "Use manual testing or browser dev tools for performance analysis"
+            })
+            recommendations.append("Manual performance testing recommended")
+        elif http_status >= 400:
             issues.append({
                 "description": f"HTTP error: {http_status}",
                 "location": self._get_performance_location(url, "http_status", str(http_status)),
