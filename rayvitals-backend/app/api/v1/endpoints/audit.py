@@ -12,7 +12,9 @@ import structlog
 import uuid
 
 from app.core.database import get_async_session
+from app.core.security import get_current_api_key, check_rate_limit, get_optional_api_key
 from app.models.audit import AuditRequest
+from app.models.user import ApiKey
 from app.services.audit_service import AuditService
 
 logger = structlog.get_logger()
@@ -72,7 +74,8 @@ class AuditResultResponse(BaseModel):
 async def start_audit(
     request: AuditStartRequest,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_async_session)
+    db: AsyncSession = Depends(get_async_session),
+    api_key: ApiKey = Depends(check_rate_limit)
 ):
     """Start a new website audit"""
     try:
@@ -80,7 +83,7 @@ async def start_audit(
         audit_request = AuditRequest(
             url=str(request.url),
             site_token=request.site_token,
-            user_id=request.user_id,
+            user_id=str(api_key.id),  # Track which API key made the request
             status="pending"
         )
         
@@ -187,7 +190,10 @@ async def get_task_status(task_id: str):
 
 
 @router.post("/demo", response_model=dict)
-async def demo_audit(request: AuditStartRequest):
+async def demo_audit(
+    request: AuditStartRequest,
+    api_key: Optional[ApiKey] = Depends(get_optional_api_key())
+):
     """Demo audit that works without database - tests core scanning functionality"""
     try:
         logger.info("Starting demo audit", url=str(request.url))
@@ -251,7 +257,8 @@ async def demo_audit(request: AuditStartRequest):
 @router.get("/status/{audit_id}", response_model=AuditStatusResponse)
 async def get_audit_status(
     audit_id: str,
-    db: AsyncSession = Depends(get_async_session)
+    db: AsyncSession = Depends(get_async_session),
+    api_key: ApiKey = Depends(get_current_api_key)
 ):
     """Get audit status"""
     try:
@@ -290,7 +297,8 @@ async def get_audit_status(
 @router.get("/results/{audit_id}", response_model=AuditResultResponse)
 async def get_audit_results(
     audit_id: str,
-    db: AsyncSession = Depends(get_async_session)
+    db: AsyncSession = Depends(get_async_session),
+    api_key: ApiKey = Depends(get_current_api_key)
 ):
     """Get full audit results"""
     try:

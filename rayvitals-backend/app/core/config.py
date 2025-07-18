@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.urandom(32).hex()
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # CORS
-    ALLOWED_ORIGINS: str = "*"
+    # CORS - Default to production URL, override in .env for development
+    ALLOWED_ORIGINS: str = "https://rayvitals-backend-xwq86.ondigitalocean.app"
     
     # Database - Supabase
     SUPABASE_URL: str = ""

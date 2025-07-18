@@ -383,5 +383,68 @@ The audit functionality should now work properly without the "'NoneType' object 
 
 ---
 
+---
+
+# Issue Analysis: "issue.includes is not a function" JavaScript Error
+
+## Problem Analysis
+
+After investigating the backend code, I found the root cause of the "issue.includes is not a function" error that occurs in production but not locally. The issue stems from inconsistent data types being added to the `issues` arrays in the scanner services.
+
+## Root Cause
+
+**Location**: `/app/services/ai_analyzer.py` lines 82-84
+**Issue**: The AI analyzer assumes all issues are strings when it tries to join them:
+
+```python
+Security Issues: {', '.join(security_issues[:3]) if security_issues else 'None detected'}
+Performance Issues: {', '.join(performance_issues[:3]) if performance_issues else 'None detected'}
+SEO Issues: {', '.join(seo_issues[:3]) if seo_issues else 'None detected'}
+```
+
+However, throughout the scanner services, issues are being added as **both strings AND objects**:
+
+### String Issues (Simple Messages)
+Found in exception handling blocks:
+- `results["issues"].append("⚠️ Automated access blocked - this is NOT a website security issue")`
+- `results["issues"].append("Page not found - cannot analyze security")`
+- `results["issues"].append(f"Security scan failed: {str(e)}")`
+
+### Object Issues (Structured Data)
+Found in normal operation blocks:
+- Security Scanner: `issues.append({"description": "...", "location": {...}, "severity": "high", "help": "..."})`
+- Performance Scanner: `issues.append({"description": "...", "location": {...}, "severity": "medium", "help": "..."})`
+- Accessibility Scanner: `issues.append({"description": "...", "location": {...}, "severity": "critical", "help": "..."})`
+- UX Scanner: `issues.append({"description": "...", "location": {...}, "severity": "high", "help": "..."})`
+
+## Why It Works Locally vs Production
+
+**Local Development**: May have different error conditions, less strict bot detection, or different network conditions that result in more string-based issues from exception handling.
+
+**Production Environment**: More likely to encounter structured object issues from successful scans, causing the JavaScript `.includes()` method to fail when trying to call it on objects instead of strings.
+
+## Todo Items
+
+- [ ] **High Priority**: Fix AI analyzer to handle both string and object issues
+- [ ] **Medium Priority**: Standardize issue format across all scanners
+- [ ] **Low Priority**: Add type checking and validation for issues arrays
+- [ ] **Testing**: Verify the fix works with mixed issue types
+
+## Implementation Plan
+
+1. **Fix AI Analyzer** - Modify the string join logic to handle both strings and objects
+2. **Standardize Issue Format** - Ensure all scanners use consistent object format
+3. **Add Type Safety** - Add validation to prevent future mixed-type issues
+4. **Test Thoroughly** - Verify fix works in both local and production environments
+
+## Files to Modify
+
+- `/app/services/ai_analyzer.py` - Primary fix location
+- `/app/services/security_scanner.py` - Standardize issue format
+- `/app/services/performance_scanner.py` - Standardize issue format
+- `/app/services/accessibility_scanner.py` - Standardize issue format
+- `/app/services/ux_scanner.py` - Standardize issue format
+- `/app/services/audit_service.py` - Standardize issue format
+
 ## Review Section
 (To be completed after implementation)
