@@ -144,38 +144,70 @@ class PerformanceScanner:
             "server_response_time": None
         }
         
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
         try:
-            async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
-                response = await client.get(url)
+            # Use content fetcher to get headers (with headless browser preference)
+            content_result = await self.content_fetcher.fetch_page_content(url, prefer_headless=True)
+            
+            if content_result.get("headers"):
+                headers = content_result["headers"]
                 
                 # Check compression
-                if "content-encoding" in response.headers:
-                    encoding = response.headers["content-encoding"]
+                if "content-encoding" in headers:
+                    encoding = headers["content-encoding"]
                     if encoding in ["gzip", "deflate", "br"]:
                         results["compression_enabled"] = True
                 
                 # Check keep-alive
-                if "connection" in response.headers:
-                    if "keep-alive" in response.headers["connection"].lower():
+                if "connection" in headers:
+                    if "keep-alive" in headers["connection"].lower():
                         results["keep_alive_enabled"] = True
                 
                 # Cache headers
                 cache_headers = {}
                 for header in ["cache-control", "expires", "last-modified", "etag"]:
-                    if header in response.headers:
-                        cache_headers[header] = response.headers[header]
+                    if header in headers:
+                        cache_headers[header] = headers[header]
                 results["cache_headers"] = cache_headers
                 
                 # Content type
-                results["content_type"] = response.headers.get("content-type", "")
+                results["content_type"] = headers.get("content-type", "")
                 
                 # Server response time (from server header if available)
-                if "server-timing" in response.headers:
-                    results["server_response_time"] = response.headers["server-timing"]
+                if "server-timing" in headers:
+                    results["server_response_time"] = headers["server-timing"]
+            else:
+                # If no headers from content fetcher, try direct HTTP as fallback
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+                
+                async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
+                    response = await client.get(url)
+                    
+                    # Check compression
+                    if "content-encoding" in response.headers:
+                        encoding = response.headers["content-encoding"]
+                        if encoding in ["gzip", "deflate", "br"]:
+                            results["compression_enabled"] = True
+                    
+                    # Check keep-alive
+                    if "connection" in response.headers:
+                        if "keep-alive" in response.headers["connection"].lower():
+                            results["keep_alive_enabled"] = True
+                    
+                    # Cache headers
+                    cache_headers = {}
+                    for header in ["cache-control", "expires", "last-modified", "etag"]:
+                        if header in response.headers:
+                            cache_headers[header] = response.headers[header]
+                    results["cache_headers"] = cache_headers
+                    
+                    # Content type
+                    results["content_type"] = response.headers.get("content-type", "")
+                    
+                    # Server response time (from server header if available)
+                    if "server-timing" in response.headers:
+                        results["server_response_time"] = response.headers["server-timing"]
                 
         except Exception as e:
             logger.error("HTTP response analysis failed", error=str(e), url=url)
@@ -209,8 +241,8 @@ class PerformanceScanner:
         # HTTP status
         http_status = perf_metrics.get("http_status", 200)
         if http_status == 403:
-            # 403 is typically bot blocking, not a performance issue - minimal penalty
-            score -= 5
+            # 403 is typically bot blocking, not a performance issue - no penalty
+            score -= 0
         elif http_status >= 400:
             score -= 30
         elif http_status >= 300:
