@@ -829,6 +829,7 @@
                     if (categoryData.issues && categoryData.issues.length > 0) {
                         // Filter out 403 errors and bot blocking messages
                         const filteredIssues = categoryData.issues.filter(issue => 
+                            typeof issue === 'string' && 
                             !issue.includes('403') && 
                             !issue.includes('⚠️ Automated access blocked') &&
                             !issue.includes('HTTP error: 403') &&
